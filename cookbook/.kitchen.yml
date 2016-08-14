@@ -1,0 +1,9 @@
+---
+provisioner:
+  name: chef_zero
+
+platforms:
+  - name: debian-8.5
+
+suites:
+  - name: jenkins
