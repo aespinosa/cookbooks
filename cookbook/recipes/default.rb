@@ -12,7 +12,7 @@ end
 include_recipe 'jenkins::master'
 
 repo = resources('apt_repository[jenkins]')
-repo.uri 'http://proxy.dev:3142/pkg.jenkins-ci.org/debian-stable'
+repo.uri 'http://pkg.jenkins-ci.org/debian-stable'
 
 ruby_block 'load jenkins credential' do
   block do
@@ -111,9 +111,11 @@ jenkins_script 'secure jenkins' do
   command <<-eos.gsub(/^\s+/, '')
     import jenkins.model.Jenkins;
     import org.jenkinsci.plugins.GithubSecurityRealm;
+    import hudson.security.HudsonPrivateSecurityRealm;
 
-    Jenkins.instance.securityRealm = new GithubSecurityRealm(
-        'https://github.com', 'https://api.github.com', 'x', 'y')
+    // Jenkins.instance.securityRealm = new GithubSecurityRealm(
+    //    'https://github.com', 'https://api.github.com', 'x', 'y')
+    Jenkins.instance.securityRealm = new HudsonPrivateSecurityRealm(false, false, null);
 
     permissions = new hudson.security.GlobalMatrixAuthorizationStrategy()
 
@@ -129,18 +131,18 @@ jenkins_script 'secure jenkins' do
   eos
 end
 
-jenkins_script 'install seed-job' do
+jenkins_script 'install Seed Job' do
   command <<-eos.gsub(/^\s+/, '')
     import jenkins.model.Jenkins;
     import hudson.model.FreeStyleProject;
 
-    job = Jenkins.instance.createProject(FreeStyleProject, 'seed-job')
+    job = Jenkins.instance.createProject(FreeStyleProject, 'seed')
     job.displayName = 'Seed Job'
 
     builder = new javaposse.jobdsl.plugin.ExecuteDslScripts(
       new javaposse.jobdsl.plugin.ExecuteDslScripts.ScriptLocation(
           'false',
-          'samples.groovy',
+          'seed.groovy',
           null),
       false,
       javaposse.jobdsl.plugin.RemovedJobAction.DELETE, 
@@ -154,21 +156,21 @@ jenkins_script 'install seed-job' do
   not_if { ::File.exists? '/var/lib/jenkins/jobs/seed/config.xml' }
 end
 
-directory '/var/lib/jenkins/jobs/seed-job/workspace' do
+directory '/var/lib/jenkins/jobs/seed/workspace' do
   owner 'jenkins'
 end
 
 # TODO: create the seed job
-cookbook_file '/var/lib/jenkins/jobs/seed-job/workspace/samples.groovy' do
+cookbook_file '/var/lib/jenkins/jobs/seed/workspace/seed.groovy' do
   action :nothing
-  source 'samples.groovy'
-  notifies :execute, 'jenkins_script[build seed-job]'
+  source 'seed.groovy'
+  notifies :execute, 'jenkins_script[build seed job]'
 end
 
-jenkins_script 'build seed-job' do
+jenkins_script 'build seed job' do
   command <<-eos.gsub(/^\s+/, '')
     import jenkins.model.Jenkins;
-    job = Jenkins.instance.getItem('seed-job')
+    job = Jenkins.instance.getItem('seed')
     job.scheduleBuild(new hudson.model.Cause.UserIdCause())
   eos
   action :nothing
@@ -177,7 +179,7 @@ end
 package 'git-core'
 
 apt_repository 'nginx' do
-  uri "http://proxy.dev:3142/nginx.org/packages/#{node['platform']}"
+  uri "http://nginx.org/packages/#{node['platform']}"
   distribution node['lsb']['codename']
   components %w(nginx)
   key 'http://nginx.org/keys/nginx_signing.key'
@@ -210,4 +212,24 @@ end
 service 'nginx' do
   reload_command '/etc/init.d/nginx reload'
   action %w(enable start)
+end
+
+ruby_block 'register dns' do
+  block do
+    require 'gcloud'
+    zone = Gcloud.new.dns.zone 'top'
+
+    if zone.records('cookbooks.espinosa.io') == []
+      zone.add 'cookbooks.espinosa.io', 'A', 86400, [node['cloud_v2']['public_ipv4']]
+    else
+      zone.replace 'cookbooks.espinosa.io', 'A', 86400, [node['cloud_v2']['public_ipv4']]
+    end
+  end
+
+  not_if do
+    require 'gcloud'
+    zone = Gcloud.new.dns.zone 'top'
+    jenkins_record = zone.records('cookbooks.espinosa.io').first
+    jenkins_record && jenkins_record.data == [node['cloud_v2']['public_ipv4']]
+  end
 end

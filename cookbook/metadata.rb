@@ -9,3 +9,5 @@ maintainer 'Allan Espinosa'
 maintainer_email 'allan.espinosa@outlook.com'
 
 depends 'jenkins', '~> 2.6.0'
+
+gem 'gcloud', '~> 0.12.2'
