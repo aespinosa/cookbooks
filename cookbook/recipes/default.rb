@@ -151,7 +151,7 @@ jenkins_script 'install seed-job' do
 
     job.save()
   eos
-  not_if { ::File.exists? '/var/lib/jenkins/jobs/seed-job/config.xml' }
+  not_if { ::File.exists? '/var/lib/jenkins/jobs/seed/config.xml' }
 end
 
 directory '/var/lib/jenkins/jobs/seed-job/workspace' do
