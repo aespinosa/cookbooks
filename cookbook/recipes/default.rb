@@ -3,6 +3,15 @@ include_recipe 'apt'
 
 package 'openjdk-7-jre-headless'
 
+directory '/var/lib/jenkins' do
+  recursive true
+end
+
+mount '/var/lib/jenkins' do
+  device '/dev/disk/by-id/google-cookbooks-jenkins'
+  only_if { File.exists? '/dev/disk/by-id/google-cookbooks-jenkins' }
+end
+
 node.default['jenkins']['master'].tap do |master|
   master['install_method'] = 'package'
   master['version'] = '2.7.2'
