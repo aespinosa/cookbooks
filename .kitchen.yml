@@ -7,3 +7,5 @@ platforms:
 
 suites:
   - name: jenkins
+    provisioner:
+      policyfile_path: cookbooks/allan_jenkins/Policyfile.rb

@@ -1,4 +1,4 @@
-name 'cookbooks_jenkins'
+name 'allan_jenkins'
 
 version '0.1.0'
 
