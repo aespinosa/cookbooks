@@ -83,6 +83,10 @@ file ::File.join(jenkins_home, 'init.groovy.d', '03_secure_instance.groovy') do
     import jenkins.model.Jenkins;
     Jenkins.instance.injector.getInstance(jenkins.security.s2m.AdminWhitelistRule.class).setMasterKillSwitch(false)
 
+    dsl = Jenkins.instance.injector.getInstance(javaposse.jobdsl.plugin.GlobalJobDslSecurityConfiguration.class)
+    dsl.useScriptSecurity = false
+    dsl.save()
+
     import org.jenkinsci.plugins.GithubSecurityRealm;
     import hudson.security.HudsonPrivateSecurityRealm;
 
