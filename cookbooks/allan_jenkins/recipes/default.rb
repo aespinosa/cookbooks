@@ -21,7 +21,7 @@ end
 include_recipe 'jenkins::master'
 
 repo = resources('apt_repository[jenkins]')
-repo.uri 'http://pkg.jenkins-ci.org/debian-stable'
+repo.uri 'http://pkg.jenkins.io/debian-stable'
 
 ruby_block 'load jenkins credential' do
   block do
