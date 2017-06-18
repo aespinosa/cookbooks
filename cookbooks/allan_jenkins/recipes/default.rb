@@ -14,7 +14,7 @@ end
 
 node.default['jenkins']['master'].tap do |master|
   master['install_method'] = 'package'
-  master['version'] = '2.7.2'
+  master['version'] = '2.46.3'
   master['jvm_options'] = '-Djenkins.install.runSetupWizard=false'
   master['listen_address'] = '127.0.0.1'
 end
