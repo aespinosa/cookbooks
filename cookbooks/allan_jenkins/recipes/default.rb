@@ -106,6 +106,13 @@ file ::File.join(jenkins_home, 'init.groovy.d', '03_secure_instance.groovy') do
   eos
 end
 
+directory '/var/lib/jenkins/workspace/seed' do
+  recursive true
+end
+cookbook_file '/var/lib/jenkins/workspace/seed/seed.groovy' do
+  source 'seed.groovy'
+end
+
 file ::File.join(jenkins_home, 'init.groovy.d', '04_setup_jobs.groovy') do
   content <<-eos.gsub(/^\s+/, '')
     import jenkins.model.Jenkins;
@@ -125,28 +132,10 @@ file ::File.join(jenkins_home, 'init.groovy.d', '04_setup_jobs.groovy') do
       job.buildersList.add(builder)
 
       job.save()
+
+      job.scheduleBuild2(10)
     }
   eos
-end
-
-directory '/var/lib/jenkins/jobs/seed/workspace' do
-  owner 'jenkins'
-end
-
-# TODO: create the seed job
-cookbook_file '/var/lib/jenkins/jobs/seed/workspace/seed.groovy' do
-  action :nothing
-  source 'seed.groovy'
-  notifies :execute, 'jenkins_script[build seed job]'
-end
-
-jenkins_script 'build seed job' do
-  command <<-eos.gsub(/^\s+/, '')
-    import jenkins.model.Jenkins;
-    job = Jenkins.instance.getItem('seed')
-    job.scheduleBuild(new hudson.model.Cause.UserIdCause())
-  eos
-  action :nothing
 end
 
 include_recipe 'allan_jenkins:_https'
