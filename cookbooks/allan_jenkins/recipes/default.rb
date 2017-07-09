@@ -1,5 +1,4 @@
-node.default['apt']['confd']['install_recommends'] = false
-include_recipe 'apt'
+include_recipe 'allan_jenkins::_apt'
 
 package 'openjdk-7-jre-headless'
 
