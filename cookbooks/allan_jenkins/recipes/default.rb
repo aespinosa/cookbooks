@@ -25,4 +25,4 @@ remote_directory jenkins_home do
   source 'jenkins_home'
 end
 
-include_recipe 'allan_jenkins:_https'
+include_recipe 'allan_jenkins::_https'
