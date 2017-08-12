@@ -1,6 +1,4 @@
-include_recipe 'allan_jenkins::_apt'
-
-package 'openjdk-7-jre-headless'
+package 'java-1.8.0-openjdk'
 
 mount '/var/lib/jenkins' do
   device '/dev/disk/by-id/google-cookbooks-jenkins'
@@ -14,8 +12,8 @@ node.default['jenkins']['master'].tap do |master|
 end
 include_recipe 'jenkins::master'
 
-repo = resources('apt_repository[jenkins]')
-repo.uri 'http://pkg.jenkins.io/debian-stable'
+repo = resources('yum_repository[jenkins-ci]')
+repo.baseurl 'http://pkg.jenkins.io/redhat-stable'
 
 jenkins_home = node.default['jenkins']['master']['home']
 

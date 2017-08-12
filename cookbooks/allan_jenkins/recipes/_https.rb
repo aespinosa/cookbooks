@@ -1,4 +1,4 @@
-package 'git-core'
+include_recipe 'yum-epel'
 
 ruby_block 'register dns' do
   block do
@@ -21,56 +21,29 @@ ruby_block 'register dns' do
 end
 
 
-apt_repository 'nginx' do
-  uri "http://nginx.org/packages/#{node['platform']}"
-  distribution node['lsb']['codename']
-  components %w(nginx)
-  key 'http://nginx.org/keys/nginx_signing.key'
-end
-
-apt_repository 'jessie-backports' do
-  uri 'http://http.debian.net/debian'
-  distribution 'jessie-backports'
-  components %w(main)
+yum_repository 'nginx' do
+  baseurl "http://nginx.org/packages/centos/7/x86_64"
+  gpgkey 'http://nginx.org/keys/nginx_signing.key'
 end
 
 user 'certbot' do
   system true
 end
 
-directory '/var/lib/letsencrypt' do
-  owner 'certbot'
-end
-
-directory '/etc/letsencrypt' do
-  owner 'certbot'
-end
-
-directory '/var/log/letsencrypt' do
-  owner 'certbot'
-end
-
-package 'certbot' do
-  options '-t jessie-backports'
-end
-
-systemd_unit 'certbot.timer' do
-  action :enable
-end
-
-package 'nginx'
-
-ruby_block 'confirm letsencrypt' do
-  block do
-    unless ::File.exist? '/etc/letsencrypt/live/cookbooks.espinosa.io/fullchain.pem'
-      resources('file[/etc/nginx/https.conf]').content ''
-    end
+%w(/var/lib/letsencrypt /etc/letsencrypt /var/log/letsencrypt).each do |d|
+  directory d do
+    owner 'certbot'
   end
 end
 
+package 'certbot'
+
+package 'nginx'
+
 file '/etc/nginx/https.conf' do
-  
-  content <<-eos
+  content lazy {
+    if ::File.exist? '/etc/letsencrypt/live/cookbooks.espinosa.io/fullchain.pem'
+      <<-eos
 server {
   listen 443 ssl;
 
@@ -84,7 +57,12 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
   }
 }
-  eos
+      eos
+    else
+      ''
+    end
+  }
+  notifies :reload, 'service[nginx]'
 end
 
 file '/etc/nginx/nginx.conf' do
@@ -111,6 +89,5 @@ http {
 end
 
 service 'nginx' do
-  reload_command '/etc/init.d/nginx reload'
   action %w(enable start)
 end

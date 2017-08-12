@@ -1,9 +1,12 @@
 ---
+driver:
+  name: vagrant
+
 provisioner:
   name: chef_zero
 
 platforms:
-  - name: debian-8.8
+  - name: centos/7
 
 suites:
   - name: jenkins
